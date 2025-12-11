@@ -1,0 +1,216 @@
+use local;
+
+db.inventory.drop();
+
+db.inventory.insertMany([
+   { item: "journal", qty: 25, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "notebook", qty: 50, size: { h: 8.5, w: 11, uom: "in" }, status: "A" },
+   { item: "paper", qty: 100, size: { h: 8.5, w: 11, uom: "in" }, status: "D" },
+   { item: "planner", qty: 75, size: { h: 22.85, w: 30, uom: "cm" }, status: "D" },
+   { item: "postcard", qty: 45, size: { h: 10, w: 15.25, uom: "cm" }, status: "A" }
+]);
+
+
+db.inventory.find( {} );
+
+db.inventory.find( { status: "D" } );
+
+db.inventory.find( { status: { $in: [ "A", "D" ] } } );
+
+db.inventory.find( { status: "A", qty: { $lt: 30 } } );
+
+db.inventory.find( { $or: [ { status: "A" }, { qty: { $lt: 30 } } ] } );
+
+db.inventory.find( { status: "A" }, { item: 1, status: 1, _id: 0 } );
+
+db.inventory.insertMany(
+   { item: "canvas", qty: 100, size: { h: 28, w: 35.5, uom: "cm" }, status: "A" });
+
+db.inventory.insertMany( [
+   { item: "canvas", qty: 100, size: { h: 28, w: 35.5, uom: "cm" }, status: "A" },
+   { item: "journal", qty: 25, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "mat", qty: 85, size: { h: 27.9, w: 35.5, uom: "cm" }, status: "A" },
+   { item: "mousepad", qty: 25, size: { h: 19, w: 22.85, uom: "cm" }, status: "P" },
+   { item: "notebook", qty: 50, size: { h: 8.5, w: 11, uom: "in" }, status: "P" },
+   { item: "paper", qty: 100, size: { h: 8.5, w: 11, uom: "in" }, status: "D" },
+   { item: "planner", qty: 75, size: { h: 22.85, w: 30, uom: "cm" }, status: "D" },
+   { item: "postcard", qty: 45, size: { h: 10, w: 15.25, uom: "cm" }, status: "A" },
+   { item: "sketchbook", qty: 80, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "sketch pad", qty: 95, size: { h: 22.85, w: 30.5, uom: "cm" }, status: "A" }
+] );
+
+
+db.inventory.updateOne(
+   { item: "paper" },
+   {
+     $set: { "size.uom": "cm", status: "P" },
+     $currentDate: { lastModified: true }
+   }
+);
+
+db.inventory.updateOne(
+   { item: "paper" },
+   {
+     $set: { "size.uom": "cm", status: "P" },
+     $currentDate: { lastModified: true }
+   }
+);
+
+db.inventory.updateMany(
+   { "qty": { $lt: 50 } },
+   {
+     $set: { "size.uom": "in", status: "P" },
+     $currentDate: { lastModified: true }
+   }
+);
+
+db.inventory.replaceOne(
+   { item: "paper" },
+   { item: "paper", instock: [ { warehouse: "A", qty: 60 }, { warehouse: "B", qty: 40 } ] }
+);
+
+db.inventory.insertMany( [
+   { item: "journal", qty: 25, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "notebook", qty: 50, size: { h: 8.5, w: 11, uom: "in" }, status: "P" },
+   { item: "paper", qty: 100, size: { h: 8.5, w: 11, uom: "in" }, status: "D" },
+   { item: "planner", qty: 75, size: { h: 22.85, w: 30, uom: "cm" }, status: "D" },
+   { item: "postcard", qty: 45, size: { h: 10, w: 15.25, uom: "cm" }, status: "A" },
+] );
+
+db.inventory.deleteMany({});
+
+db.inventory.deleteMany({ status : "A" });
+
+db.inventory.deleteOne( { status: "D" } );
+
+db.stores.drop();
+
+db.stores.insert(
+   [
+     { _id: 1, name: "Java Hut", description: "Coffee and cakes" },
+     { _id: 2, name: "Burger Buns", description: "Gourmet hamburgers" },
+     { _id: 3, name: "Coffee Shop", description: "Just coffee" },
+     { _id: 4, name: "Clothes Clothes Clothes", description: "Discount clothing" },
+     { _id: 5, name: "Java Shopping", description: "Indonesian goods" }
+   ]
+);
+
+
+db.stores.createIndex( { name: "text", description: "text" } );
+
+db.stores.find( { $text: { $search: "java coffee shop" } } );
+
+db.stores.find( { $text: { $search: "java shop -coffee" } } );
+
+db.stores.find(
+   { $text: { $search: "java coffee shop" } },
+   { score: { $meta: "textScore" } }
+).sort( { score: { $meta: "textScore" } } );
+
+db.stores.find(
+   { $text: { $search: "coffee shop cake" } },
+   { score: { $meta: "textScore" } }
+).sort( { score: { $meta: "textScore" } } );
+
+db.stocks.drop();
+
+db.stocks.createIndex( { name: "text" } );
+
+db.stocks.insertMany([
+   { name: "Infosys", qty: 100, price: 800 },
+   { name: "TCS", qty: 100, price: 2000 },
+   { name: "Wipro", qty: 2500, price: 300 }
+]);
+
+db.stocks.aggregate([
+  { $match: { "price": 2000 } }
+]);
+
+db.stocks.aggregate([ { $match: { "name": "Infosys" } } ]);
+
+db.stocks.aggregate([{$group : {_id : "$qty", same_qty : {$sum : 1}}}]);
+
+db.exp4.drop();
+db.exp4.insert({ "_id" : "3434sfsf", "rate" : 60, "class" : "a" });
+db.exp4.insert({ "_id" : "sdsdsd", "rate" : 60, "class" : "b", "hrs" : 8 });
+
+db.exp4.aggregate([
+     { $match:
+       {$or : [ {"class" : "a"},
+                {$and : [{"class":"b"},{"hrs": {"$exists" : 1}}]}
+              ]
+       }
+     },
+     { $project :
+        { rateMultiply : { $multiply: ["$rate","$hrs",52]},
+         rate:1, class:1, hrs : 1
+        }
+     },
+     { $match :
+       {$or : [
+                { $and : [ {"class" : "a"} ,
+                           {"rate" : {"$gt" : 20000}}
+                         ]
+                } ,
+                { $and : [ {"class" : "b"},
+                           {rateMultiply: {$gt:20000}}
+                         ]
+                 }
+               ]
+       }
+     },
+     { $project: {class : 1 , rate : 1 , hrs : 1 }
+     }
+  ]);
+
+db.inv2.drop();
+db.inv2.insertMany([
+   { "_id" : ObjectId("5ae14d2e124da839884ff939"), "item" : "journal", "qty" : 25, "size" : { "h" : 14, "w" : 21, "uom" : "cm" }, "status" : "A" },
+   { "_id" : ObjectId("5ae14d2e124da839884ff93a"), "item" : "notebook", "qty" : 50, "size" : { "h" : 8.5, "w" : 11, "uom" : "in" }, "status" : "A" },
+   { "_id" : ObjectId("5ae14d2e124da839884ff93b"), "item" : "paper", "qty" : 100, "size" : { "h" : 8.5, "w" : 11, "uom" : "in" }, "status" : "D" },
+   { "_id" : ObjectId("5ae14d2e124da839884ff93d"), "item" : "postcard", "qty" : 45, "size" : { "h" : 10, "w" : 15.25, "uom" : "cm" }, "status" : "A" }
+   ]);
+
+db.inv2.find( { status: "A", qty: { $lt: 30 } } );
+
+db.orders.drop();
+
+db.orders.insertMany( [
+   { _id: 0, name: "Pepperoni", size: "small", price: 19,
+     quantity: 10, date: ISODate( "2021-03-13T08:14:30Z" ) },
+   { _id: 1, name: "Pepperoni", size: "medium", price: 20,
+     quantity: 20, date : ISODate( "2021-03-13T09:13:24Z" ) },
+   { _id: 2, name: "Pepperoni", size: "large", price: 21,
+     quantity: 30, date : ISODate( "2021-03-17T09:22:12Z" ) },
+   { _id: 3, name: "Cheese", size: "small", price: 12,
+     quantity: 15, date : ISODate( "2021-03-13T11:21:39.736Z" ) },
+   { _id: 4, name: "Cheese", size: "medium", price: 13,
+     quantity:50, date : ISODate( "2022-01-12T21:23:13.331Z" ) },
+   { _id: 5, name: "Cheese", size: "large", price: 14,
+     quantity: 10, date : ISODate( "2022-01-12T05:08:13Z" ) },
+   { _id: 6, name: "Vegan", size: "small", price: 17,
+     quantity: 10, date : ISODate( "2021-01-13T05:08:13Z" ) },
+   { _id: 7, name: "Vegan", size: "medium", price: 18,
+     quantity: 10, date : ISODate( "2021-01-13T05:10:13Z" ) }
+] );
+
+
+db.orders.aggregate( [
+   {
+      $match:
+      {
+         "date": { $gte: new ISODate( "2020-01-30" ), $lt: new ISODate( "2022-01-30" ) }
+      }
+   },
+   {
+      $group:
+      {
+         _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+         totalOrderValue: { $sum: { $multiply: [ "$price", "$quantity" ] } },
+         averageOrderQuantity: { $avg: "$quantity" }
+      }
+   },
+   {
+      $sort: { totalOrderValue: -1 }
+   }
+ ] );
