@@ -216,8 +216,8 @@ class SimpleTest : WithAssertions {
 
     companion object {
         private const val urlWithAuth =
-            "jdbc:mongodb://localhost:27017/local?scan=fast&authSource=local&connectTimeoutMS=1000"
-        private const val urlWithoutAuth = "jdbc:mongodb://localhost"
+            "mongodb://localhost:27017/local?scan=fast&authSource=local&connectTimeoutMS=1000"
+        private const val urlWithoutAuth = "mongodb://localhost"
 
 
         private val aggregateScript = arrayOf(

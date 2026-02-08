@@ -13,7 +13,7 @@ import org.slf4j.Logger
 
 /**
  * Minimal implementation of the JDBC standards for MongoDb database.
- * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
+ * The URL is passed as it is to the MongoDb native Java driver.
  * Example :
  * jdbc:mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
  *
@@ -172,9 +172,9 @@ class JdbcDriver : Driver {
             && !trimmed.startsWith("jdbc:mongodb+srv://")
         ) {
             throw IllegalArgumentException(
-                "Invalid URL prefix. It must start with 'mongodb://' or 'mongodb+srv://' or 'jdbc:mongodb://' or 'jdbc:mongodb+srv://'.\n" +
-                        "Example (local): jdbc:mongodb://user:pass@localhost:27017/mydb\n" +
-                        "Example (Atlas): jdbc:mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
+                "Invalid URL prefix. It must start with 'mongodb://' or 'mongodb+srv://'.\n" +
+                        "Example (local): mongodb://user:pass@localhost:27017/mydb\n" +
+                        "Example (Atlas): mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
             )
         }
 
@@ -183,15 +183,15 @@ class JdbcDriver : Driver {
             throw IllegalArgumentException(
                 "Invalid MongoDB URL: mixed 'mongodb://' and 'mongodb+srv://' prefixes.\n" +
                         "Use only one. Example for Atlas:\n" +
-                        "  jdbc:mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
+                        "  mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
             )
         }
 
         // SRV URLs must NOT contain a port
-        if (trimmed.startsWith("jdbc:mongodb+srv://") && Regex(":[0-9]+").containsMatchIn(trimmed)) {
+        if (trimmed.startsWith("mongodb+srv://") && Regex(":[0-9]+").containsMatchIn(trimmed)) {
             throw IllegalArgumentException(
-                "SRV URLs (jdbc:mongodb+srv://) cannot include a port number.\n" +
-                        "Example: jdbc:mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
+                "SRV URLs (mongodb+srv://) cannot include a port number.\n" +
+                        "Example: mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
             )
         }
 
@@ -204,13 +204,13 @@ class JdbcDriver : Driver {
         }
 
         // Minimal structure validation
-        val pattern = Regex("^jdbc:mongodb(\\+srv)?:\\/\\/.+@.+\\..+\\/.+")
+        val pattern = Regex("^mongodb(\\+srv)?:\\/\\/.+@.+\\..+\\/.+")
         if (!pattern.matches(trimmed)) {
             throw IllegalArgumentException(
                 "Invalid MongoDB JDBC URL format.\n" +
                         "Examples:\n" +
-                        "  jdbc:mongodb://user:pass@localhost:27017/mydb\n" +
-                        "  jdbc:mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
+                        "  mongodb://user:pass@localhost:27017/mydb\n" +
+                        "  mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
             )
         }
     }

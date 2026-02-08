@@ -123,7 +123,7 @@ db.slave.insert( { name: "slave2", master_id: oid } )
 
     companion object {
         private const val urlWithAuth =
-            "jdbc:mongodb://admin:fictivpwd@localhost:27017/local?authSource=local&connectTimeoutMS=1000"
-        private const val urlWithoutAuth = "jdbc:mongodb://localhost"
+            "mongodb://admin:fictivpwd@localhost:27017/local?authSource=local&connectTimeoutMS=1000"
+        private const val urlWithoutAuth = "mongodb://localhost"
     }
 }

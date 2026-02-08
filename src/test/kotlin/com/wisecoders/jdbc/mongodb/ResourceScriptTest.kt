@@ -20,7 +20,7 @@ class ResourceScripts : WithAssertions {
     @Throws(ClassNotFoundException::class, SQLException::class)
     fun setUp() {
         Class.forName("com.wisecoders.jdbc.mongodb.JdbcDriver")
-        con = DriverManager.getConnection("jdbc:mongodb://localhost")
+        con = DriverManager.getConnection("mongodb://localhost")
     }
 
     @Test

@@ -46,6 +46,6 @@ class ExpandedResultSetTest : WithAssertions {
 
 
     companion object {
-        private const val urlWithoutAuth = "jdbc:mongodb://localhost?expand=true"
+        private const val urlWithoutAuth = "mongodb://localhost?expand=true"
     }
 }
