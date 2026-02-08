@@ -203,15 +203,5 @@ class JdbcDriver : Driver {
             )
         }
 
-        // Minimal structure validation
-        val pattern = Regex("^mongodb(\\+srv)?:\\/\\/.+@.+\\..+\\/.+")
-        if (!pattern.matches(trimmed)) {
-            throw IllegalArgumentException(
-                "Invalid MongoDB JDBC URL format.\n" +
-                        "Examples:\n" +
-                        "  mongodb://user:pass@localhost:27017/mydb\n" +
-                        "  mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
-            )
-        }
     }
 }
