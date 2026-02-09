@@ -37,11 +37,11 @@ class JdbcDriver : Driver {
         if (url != null) {
             validateMongoJdbcUrl(url)
             if (acceptsURL(url)) {
-                if (url.startsWith("jdbc.mongodb:")) {
-                    url = url.substring("jdbc.mongodb:".length)
-                }
                 if (url.startsWith("jdbc:")) {
                     url = url.substring("jdbc:".length)
+                }
+                if (url.startsWith("mongodb:")) {
+                    url = url.substring("mongodb:".length)
                 }
                 LOGGER.atInfo()
                     .setMessage { "Connect URL: $url" }
@@ -164,12 +164,14 @@ class JdbcDriver : Driver {
 
     fun validateMongoJdbcUrl(url: String) {
         // Normalize whitespace
-        val trimmed = url.trim()
+        var trimmed = url.trim()
+
+        if (trimmed.startsWith("jdbc:")) {
+            trimmed = trimmed.substring("jdbc:".length)
+        }
 
         if (!trimmed.startsWith("mongodb://")
             && !trimmed.startsWith("mongodb+srv://")
-            && !trimmed.startsWith("jdbc:mongodb://")
-            && !trimmed.startsWith("jdbc:mongodb+srv://")
         ) {
             throw IllegalArgumentException(
                 "Invalid URL prefix. It must start with 'mongodb://' or 'mongodb+srv://'.\n" +
