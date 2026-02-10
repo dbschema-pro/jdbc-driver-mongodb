@@ -38,19 +38,17 @@ class WrappedMongoClient(
     val expandResultSet: Boolean
     val sortFields: Boolean
 
-    fun pingServer(): Boolean {
+    fun pingServer() {
         mongoClient.listDatabaseNames()
         val command: Bson = BsonDocument("ping", BsonInt64(1))
         try {
             mongoClient.getDatabase(if (!databaseName.isNullOrEmpty()) databaseName else "admin")
                 .runCommand(command)
             LOGGER.atInfo().setMessage("Connected successfully to server.").log()
-            return true
-        } catch (ignore: Throwable) {
+        } catch (_: Throwable) {
         }
         mongoClient.getDatabase("admin").runCommand(command)
         LOGGER.atInfo().setMessage("Connected successfully to server.").log()
-        return true
     }
 
     fun close() {
@@ -167,10 +165,8 @@ class WrappedMongoClient(
         val list: MutableList<String> = ArrayList()
         try {
             val db = getDatabase(databaseName)
-            if (db != null) {
-                for (name in db.listCollectionNames()) {
-                    list.add(name)
-                }
+            for (name in db.listCollectionNames()) {
+                list.add(name)
             }
             list.remove("system.indexes")
             list.remove("system.users")
@@ -190,11 +186,9 @@ class WrappedMongoClient(
         val list: MutableList<String> = ArrayList()
         try {
             val db = getDatabase(databaseName)
-            if (db != null) {
-                for (doc in db.listCollections()) {
-                    if (doc.containsKey("type") && "view" == doc["type"]) {
-                        list.add(doc["name"].toString())
-                    }
+            for (doc in db.listCollections()) {
+                if (doc.containsKey("type") && "view" == doc["type"]) {
+                    list.add(doc["name"].toString())
                 }
             }
         } catch (ex: Throwable) {

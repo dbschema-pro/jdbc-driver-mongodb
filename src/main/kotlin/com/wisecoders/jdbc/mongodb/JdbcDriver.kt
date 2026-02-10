@@ -32,78 +32,71 @@ class JdbcDriver : Driver {
     override fun connect(
         url: String?,
         info: Properties,
-    ): Connection? {
-        var url = url
-        if (url != null) {
-            validateMongoJdbcUrl(url)
-            if (acceptsURL(url)) {
-                if (url.startsWith("jdbc:")) {
-                    url = url.substring("jdbc:".length)
-                }
-                if (url.startsWith("mongodb:")) {
-                    url = url.substring("mongodb:".length)
-                }
-                LOGGER.atInfo()
-                    .setMessage { "Connect URL: $url" }
-                    .log()
-
-                var idx: Int
-                var scan = ScanStrategy.fast
-                var expand = false
-                var sortFields = false
-                var trustStore: String? = null
-                var trustStorePassword: String? = null
-                var newUrl: String = url
-                var urlWithoutParams: String = url
-                if ((url.indexOf("?").also { idx = it }) > 0) {
-                    val paramsURL = url.substring(idx + 1)
-                    urlWithoutParams = url.substring(0, idx)
-                    val sbParams = StringBuilder()
-                    for (pair in paramsURL.split("&".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
-                        val pairArr = pair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                        val key = if (pairArr.size == 2) pairArr[0].lowercase() else ""
-                        val value = if (pairArr.size == 2) pairArr[1] else ""
-                        when (key) {
-                            "scan" -> {
-                                try {
-                                    scan = ScanStrategy.valueOf(value)
-                                } catch (ignore: IllegalArgumentException) {
-                                }
-                                LOGGER.atInfo().setMessage("ScanStrategy=$scan").log()
-                            }
-
-                            "expand" -> expand = value.toBoolean()
-                            "sort" -> sortFields = value.toBoolean()
-                            "truststore" -> trustStore = value
-                            "truststorepassword" -> trustStorePassword = value
-                            else -> {
-                                if (!sbParams.isEmpty()) sbParams.append("&")
-                                sbParams.append(pair)
-                            }
-                        }
-                    }
-                    newUrl = url.substring(0, idx) + "?" + sbParams
-                }
-                if (trustStore != null) {
-                    System.setProperty("javax.net.ssl.trustStore", trustStore)
-                }
-                if (trustStorePassword != null) {
-                    System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword)
-                }
-                var databaseName = "admin"
-                if (urlWithoutParams.endsWith("/")) {
-                    urlWithoutParams = urlWithoutParams.substring(0, urlWithoutParams.length - 1)
-                }
-                if ((urlWithoutParams.lastIndexOf("/").also { idx = it }) > 1 && urlWithoutParams[idx - 1] != '/') {
-                    databaseName = urlWithoutParams.substring(idx + 1)
-                }
-
-                LOGGER.atInfo().setMessage("MongoClient URL: $url rewritten as $newUrl").log()
-                val client = WrappedMongoClient(newUrl, info, databaseName, scan, expand, sortFields)
-                return MongoConnection(client)
-            }
+    ): Connection {
+        var url = url ?: throw SQLException("Got NULL JDBC URL")
+        validateMongoJdbcUrl(url)
+        if (url.startsWith("jdbc:")) {
+            url = url.substring("jdbc:".length)
         }
-        return null
+        LOGGER.atInfo()
+            .setMessage { "Connect URL: $url" }
+            .log()
+
+        var idx: Int
+        var scan = ScanStrategy.fast
+        var expand = false
+        var sortFields = false
+        var trustStore: String? = null
+        var trustStorePassword: String? = null
+        var newUrl: String = url
+        var urlWithoutParams: String = url
+        if ((url.indexOf("?").also { idx = it }) > 0) {
+            val paramsURL = url.substring(idx + 1)
+            urlWithoutParams = url.substring(0, idx)
+            val sbParams = StringBuilder()
+            for (pair in paramsURL.split("&".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
+                val pairArr = pair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                val key = if (pairArr.size == 2) pairArr[0].lowercase() else ""
+                val value = if (pairArr.size == 2) pairArr[1] else ""
+                when (key) {
+                    "scan" -> {
+                        try {
+                            scan = ScanStrategy.valueOf(value)
+                        } catch (_: IllegalArgumentException) {
+                        }
+                        LOGGER.atInfo().setMessage("ScanStrategy=$scan").log()
+                    }
+
+                    "expand" -> expand = value.toBoolean()
+                    "sort" -> sortFields = value.toBoolean()
+                    "truststore" -> trustStore = value
+                    "truststorepassword" -> trustStorePassword = value
+                    else -> {
+                        if (!sbParams.isEmpty()) sbParams.append("&")
+                        sbParams.append(pair)
+                    }
+                }
+            }
+            newUrl = url.substring(0, idx) + "?" + sbParams
+        }
+        if (trustStore != null) {
+            System.setProperty("javax.net.ssl.trustStore", trustStore)
+        }
+        if (trustStorePassword != null) {
+            System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword)
+        }
+        var databaseName = "admin"
+        if (urlWithoutParams.endsWith("/")) {
+            urlWithoutParams = urlWithoutParams.substring(0, urlWithoutParams.length - 1)
+        }
+        if ((urlWithoutParams.lastIndexOf("/").also { idx = it }) > 1 && urlWithoutParams[idx - 1] != '/') {
+            databaseName = urlWithoutParams.substring(idx + 1)
+        }
+
+        println("MongoClient URL: $url rewritten as $newUrl")
+        LOGGER.atInfo().setMessage("MongoClient URL: $url rewritten as $newUrl").log()
+        val client = WrappedMongoClient(newUrl, info, databaseName, scan, expand, sortFields)
+        return MongoConnection(client)
     }
 
 
