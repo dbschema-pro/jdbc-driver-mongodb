@@ -3,7 +3,7 @@ java = "21"
 kotlin = "2.0.0"
 kotlinLanguageVersion = "2.0"
 slf4j = "2.0.17"
-graal = "24.1.0"
+graal = "25.0.1"
 wisecodersCommonGradle = "5.2.4"
 wisecodersCommonLib = "11.2.0"
 wisecodersCommonJdbc = "2.0.0"
@@ -20,7 +20,10 @@ jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 gson = { module = "com.google.code.gson:gson", version = "2.11.0" }
-graal-jsScriptEngine = { module = "org.graalvm.js:js-scriptengine", version = "24.1.0" }
+graal-polyglot-core = { module = "org.graalvm.polyglot:polyglot", version.ref = "graal" }
+graal-polyglot-js = { module = "org.graalvm.polyglot:js", version.ref = "graal" }
+graal-js = { module = "org.graalvm.js:js", version.ref = "graal" }
+graal-jsScriptEngine = { module = "org.graalvm.js:js-scriptengine", version.ref = "graal" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18" }
 
 # test libraries
