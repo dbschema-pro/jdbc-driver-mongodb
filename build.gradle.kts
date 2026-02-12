@@ -19,10 +19,8 @@ dependencies {
     implementation(libs.jackson.core)
     implementation(libs.jackson.databind)
     implementation(libs.gson)
-    implementation(libs.graal.polyglot.core)
-    implementation(libs.graal.polyglot.js)
+    implementation(libs.graal.polyglot.polyglot)
     implementation(libs.graal.js)
-    implementation(libs.graal.jsScriptEngine)
 
     runtimeOnly(libs.logback.classic)
 }
