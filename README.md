@@ -1,6 +1,7 @@
 # MongoDb JDBC Driver | DbSchema MongoDB Designer
 
 The driver is provided by [DbSchema - MongoDb Diagram Designer](https://dbschema.com/mongodb-tool.html) for everybody who needs an MongoDb JDBC driver. 
+The driver page is [here](https://dbschema.com/jdbc-driver/mongodb.html)
 
 ## Driver Features
 
