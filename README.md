@@ -29,7 +29,7 @@ The number of scanned documents can be set in the URL using the parameter scan=<
 
 ## Download JDBC Driver Binary Distribution
 
-Download the driver from the [DbSchema website](http://dbschema.com/jdbc-drivers/MongoDbJdbcDriver.zip). Unpack and include all jars in your classpath. The driver is compatible with Java 11.
+Download the driver from the [DbSchema website](http://dbschema.com/jdbc-drivers/mongodbjdbcdriver.zip). Unpack and include all jars in your classpath. The driver is compatible with Java 11.
 
 ## Driver URL
 
