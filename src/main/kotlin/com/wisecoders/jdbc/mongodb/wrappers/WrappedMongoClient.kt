@@ -103,25 +103,35 @@ class WrappedMongoClient(
             }
 
             override fun getCredential(): MongoCredential? {
-                if (prop == null) {
-                    return null
-                }
-
-                val username = prop.getProperty("user")
-                if (username == null || username.isEmpty()) {
-                    return null
+                val username = prop?.getProperty("user")
+                if (username.isNullOrEmpty()) {
+                    return super.getCredential()
                 }
 
                 val password = prop.getProperty("password")
-                val database = if (databaseName != null && !databaseName.isEmpty())
-                    databaseName
-                else
-                    "admin"
+
+                // Parse authSource from URL query params (e.g. ?authSource=admin).
+                // Fall back to the parent credential's source (when credentials are
+                // embedded in the URL), then to the database name, then to "admin".
+                val authSource = uri.substringAfter('?', "")
+                    .splitToSequence('&')
+                    .mapNotNull { param ->
+                        val parts = param.split('=', limit = 2)
+                        if (parts.size == 2 && parts[0].trim().lowercase() == "authsource") {
+                            parts[1].trim()
+                        } else {
+                            null
+                        }
+                    }
+                    .firstOrNull()
+                    ?: super.getCredential()?.source
+                    ?: databaseName?.takeIf { it.isNotEmpty() }
+                    ?: "admin"
 
                 return MongoCredential.createCredential(
                     username,
-                    database,
-                    password?.toCharArray() ?: CharArray(0)
+                    authSource,
+                    password?.toCharArray() ?: CharArray(0),
                 )
             }
         }
