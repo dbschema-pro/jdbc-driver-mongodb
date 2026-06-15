@@ -182,12 +182,14 @@ class JdbcDriver : Driver {
             )
         }
 
-        // SRV URLs must NOT contain a port
-        if (trimmed.startsWith("mongodb+srv://") && Regex(":[0-9]+").containsMatchIn(trimmed)) {
-            throw IllegalArgumentException(
-                "SRV URLs (mongodb+srv://) cannot include a port number.\n" +
-                        "Example: mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
-            )
+        if (trimmed.startsWith("mongodb+srv://")) {
+            val hostPart = trimmed.substringAfter("@", trimmed).substringBefore("/").substringBefore("?")
+            if (Regex(":[0-9]+").containsMatchIn(hostPart)) {
+                throw IllegalArgumentException(
+                    "SRV URLs (mongodb+srv://) cannot include a port number.\n" +
+                            "Example: mongodb+srv://user:pass@cluster0.mongodb.net/mydb"
+                )
+            }
         }
 
         // Ensure database name or single slash

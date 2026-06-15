@@ -45,7 +45,8 @@ class WrappedMongoClient(
             mongoClient.getDatabase(if (!databaseName.isNullOrEmpty()) databaseName else "admin")
                 .runCommand(command)
             LOGGER.atInfo().setMessage("Connected successfully to server.").log()
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            LOGGER.atWarn().setMessage("Initial ping failed, retrying on admin: ${e.message}").setCause(e).log()
         }
         mongoClient.getDatabase("admin").runCommand(command)
         LOGGER.atInfo().setMessage("Connected successfully to server.").log()
