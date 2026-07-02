@@ -14,7 +14,7 @@ wisecoders-commonJdbc-commonJdbcJvm = { module = "com.wisecoders.common-jdbc:com
 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 mongodbDriverSync = { module = "org.mongodb:mongodb-driver-sync", version = "5.5.1" }
-jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version = "2.20.1" }
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version = "2.22.0" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
