@@ -4,7 +4,7 @@ kotlin = "2.3.10"
 slf4j = "2.0.17"
 graal = "25.0.2"
 wisecodersCommonGradle = "29.0.0"
-wisecodersCommonLib = "46.0.0"
+wisecodersCommonLib = "48.0.0"
 wisecodersCommonJdbc = "19.0.0"
 
 
