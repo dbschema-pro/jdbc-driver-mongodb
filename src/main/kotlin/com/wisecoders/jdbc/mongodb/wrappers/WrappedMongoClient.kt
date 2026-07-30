@@ -1,13 +1,14 @@
 package com.wisecoders.jdbc.mongodb.wrappers
 
 import com.mongodb.ConnectionString
-import com.mongodb.MongoCredential
 import com.mongodb.client.ListDatabasesIterable
 import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoIterable
 import com.wisecoders.common_lib.common_slf4j.slf4jLogger
 import com.wisecoders.jdbc.mongodb.ScanStrategy
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.sql.SQLException
 import java.util.Properties
 import org.bson.BsonDocument
@@ -94,46 +95,13 @@ class WrappedMongoClient(
     private val cachedDatabases: MutableMap<String, WrappedMongoDatabase> = HashMap()
 
     init {
-        val connectionString: ConnectionString = object : ConnectionString(uri) {
+        val connectionString: ConnectionString = object : ConnectionString(injectCredentials(uri, prop)) {
             override fun getMaxConnectionIdleTime(): Int {
                 return Int.MAX_VALUE
             }
 
             override fun getUuidRepresentation(): UuidRepresentation {
                 return UuidRepresentation.STANDARD
-            }
-
-            override fun getCredential(): MongoCredential? {
-                val username = prop?.getProperty("user")
-                if (username.isNullOrEmpty()) {
-                    return super.getCredential()
-                }
-
-                val password = prop.getProperty("password")
-
-                // Parse authSource from URL query params (e.g. ?authSource=admin).
-                // Fall back to the parent credential's source (when credentials are
-                // embedded in the URL), then to the database name, then to "admin".
-                val authSource = uri.substringAfter('?', "")
-                    .splitToSequence('&')
-                    .mapNotNull { param ->
-                        val parts = param.split('=', limit = 2)
-                        if (parts.size == 2 && parts[0].trim().lowercase() == "authsource") {
-                            parts[1].trim()
-                        } else {
-                            null
-                        }
-                    }
-                    .firstOrNull()
-                    ?: super.getCredential()?.source
-                    ?: databaseName?.takeIf { it.isNotEmpty() }
-                    ?: "admin"
-
-                return MongoCredential.createCredential(
-                    username,
-                    authSource,
-                    password?.toCharArray() ?: CharArray(0),
-                )
             }
         }
 
@@ -217,5 +185,43 @@ class WrappedMongoClient(
         // USE STATIC SO OPENING A NEW CONNECTION WILL REMEMBER THIS
         @JvmField
         val createdDatabases = mutableListOf<String>()
+
+        /**
+         * Embeds the JDBC `user`/`password` properties into the connection string, because
+         * [ConnectionString] builds its credential while parsing: a URL with `authMechanism`
+         * but no userinfo fails with "username can not be null" before an overridden
+         * `getCredential()` could supply the username. Properties take precedence over
+         * credentials embedded in the URL.
+         */
+        internal fun injectCredentials(
+            uri: String,
+            prop: Properties?,
+        ): String {
+            val username: String? = prop?.getProperty("user")
+            if (username.isNullOrEmpty()) {
+                return uri
+            }
+            val schemeEnd: Int = uri.indexOf("://")
+            if (schemeEnd < 0) {
+                return uri
+            }
+            val authorityStart: Int = schemeEnd + "://".length
+            var authorityEnd: Int = uri.indexOfAny(charArrayOf('/', '?'), authorityStart)
+            if (authorityEnd < 0) {
+                authorityEnd = uri.length
+            }
+            val atIndex: Int = uri.lastIndexOf('@', authorityEnd - 1)
+            val hostStart: Int = if (atIndex >= authorityStart) atIndex + 1 else authorityStart
+            val password: String = prop.getProperty("password") ?: ""
+            return uri.substring(0, authorityStart) + percentEncode(username) + ":" + percentEncode(password) + "@" + uri.substring(hostStart)
+        }
+
+        // URLEncoder produces form encoding; the MongoDB URI parser expects percent
+        // encoding, where '+' stays literal and a space is %20.
+        private fun percentEncode(
+            value: String,
+        ): String {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20")
+        }
     }
 }

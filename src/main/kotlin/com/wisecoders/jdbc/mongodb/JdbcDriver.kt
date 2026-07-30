@@ -93,7 +93,6 @@ class JdbcDriver : Driver {
             databaseName = urlWithoutParams.substring(idx + 1)
         }
 
-        println("MongoClient URL: $url rewritten as $newUrl")
         LOGGER.atInfo().setMessage("MongoClient URL: $url rewritten as $newUrl").log()
         val client = WrappedMongoClient(newUrl, info, databaseName, scan, expand, sortFields)
         return MongoConnection(client)
