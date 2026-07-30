@@ -244,25 +244,50 @@ class WrappedMongoCollection<TDocument : Any> internal constructor(
     }
 
 
+    private fun countDocumentsServerSide(filter: Bson?): Long {
+        return if (filter == null) {
+            mongoCollection.countDocuments()
+        } else {
+            mongoCollection.countDocuments(filter)
+        }
+    }
+
+    private fun countDocumentsServerSide(
+        clientSession: ClientSession,
+        filter: Bson?,
+    ): Long {
+        return if (filter == null) {
+            mongoCollection.countDocuments(clientSession)
+        } else {
+            mongoCollection.countDocuments(clientSession, filter)
+        }
+    }
+
     fun find(): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find())
+        return WrappedFindIterable(mongoCollection.find(), ::countDocumentsServerSide)
     }
 
 
     fun find(aClass: Class<Any>): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find(aClass))
+        return WrappedFindIterable(mongoCollection.find(aClass), ::countDocumentsServerSide)
     }
 
 
     fun find(filter: Map<*, *>?): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find(toBson(filter)))
+        val filterBson: Bson = toBson(filter)
+        return WrappedFindIterable(mongoCollection.find(filterBson), ::countDocumentsServerSide, filterBson)
     }
 
     fun find(
         filter: Map<*, *>?,
         projection: Map<*, *>?
     ): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find(toBson(filter)).projection(toBson(projection)))
+        val filterBson: Bson = toBson(filter)
+        return WrappedFindIterable(
+            mongoCollection.find(filterBson).projection(toBson(projection)),
+            ::countDocumentsServerSide,
+            filterBson,
+        )
     }
 
 
@@ -270,12 +295,16 @@ class WrappedMongoCollection<TDocument : Any> internal constructor(
         filter: Map<*, *>?,
         aClass: Class<Any>
     ): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find<Any>(toBson(filter), aClass))
+        val filterBson: Bson = toBson(filter)
+        return WrappedFindIterable(mongoCollection.find<Any>(filterBson, aClass), ::countDocumentsServerSide, filterBson)
     }
 
 
     fun find(clientSession: ClientSession): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find(clientSession))
+        return WrappedFindIterable(
+            mongoCollection.find(clientSession),
+            { filterBson: Bson? -> countDocumentsServerSide(clientSession, filterBson) },
+        )
     }
 
 
@@ -283,7 +312,10 @@ class WrappedMongoCollection<TDocument : Any> internal constructor(
         clientSession: ClientSession,
         aClass: Class<Any>
     ): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find(clientSession, aClass))
+        return WrappedFindIterable(
+            mongoCollection.find(clientSession, aClass),
+            { filterBson: Bson? -> countDocumentsServerSide(clientSession, filterBson) },
+        )
     }
 
 
@@ -291,7 +323,12 @@ class WrappedMongoCollection<TDocument : Any> internal constructor(
         clientSession: ClientSession,
         filter: Map<*, *>?
     ): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find(clientSession, toBson(filter)))
+        val filterBson: Bson = toBson(filter)
+        return WrappedFindIterable(
+            mongoCollection.find(clientSession, filterBson),
+            { queryFilter: Bson? -> countDocumentsServerSide(clientSession, queryFilter) },
+            filterBson,
+        )
     }
 
 
@@ -300,7 +337,12 @@ class WrappedMongoCollection<TDocument : Any> internal constructor(
         filter: Map<*, *>?,
         aClass: Class<Any>
     ): WrappedFindIterable<*> {
-        return WrappedFindIterable(mongoCollection.find<Any?>(clientSession, toBson(filter), aClass))
+        val filterBson: Bson = toBson(filter)
+        return WrappedFindIterable(
+            mongoCollection.find<Any?>(clientSession, filterBson, aClass),
+            { queryFilter: Bson? -> countDocumentsServerSide(clientSession, queryFilter) },
+            filterBson,
+        )
     }
 
     //

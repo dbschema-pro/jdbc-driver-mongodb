@@ -1,7 +1,9 @@
 package com.wisecoders.jdbc.mongodb.structure
 
+import com.mongodb.client.MongoCursor
 import com.wisecoders.common_lib.common_slf4j.slf4jLogger
 import com.wisecoders.jdbc.mongodb.ScanStrategy
+import com.wisecoders.jdbc.mongodb.wrappers.WrappedFindIterable
 import com.wisecoders.jdbc.mongodb.wrappers.WrappedMongoCollection
 import org.bson.types.ObjectId
 import org.slf4j.Logger
@@ -61,7 +63,12 @@ class MetaCollection(
         sortFields: Boolean,
     ): Long {
         var cnt: Long = 0
-        mongoCollection.find().sort("{_id:" + (if (directionUp) "1" else "-1") + "}").iterator().use { cursor ->
+        val findIterable: WrappedFindIterable<*> =
+            mongoCollection.find().sort("{_id:" + (if (directionUp) "1" else "-1") + "}")
+        if (strategy != ScanStrategy.full) {
+            findIterable.limit(strategy.SCAN_COUNT.toInt())
+        }
+        findIterable.iterator().use { cursor: MongoCursor<*> ->
             while (cursor.hasNext() && cnt < strategy.SCAN_COUNT) {
                 scanDocument(cursor.next(), sortFields, 0)
                 cnt++

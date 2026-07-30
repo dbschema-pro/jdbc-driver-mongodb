@@ -16,19 +16,29 @@ import org.bson.conversions.Bson
  * Copyright Wise Coders GmbH. The MongoDB JDBC driver is build to be used with  [DbSchema Database Designer](https://dbschema.com)
  * Free to use by everyone, code modifications allowed only to the  [public repository](https://github.com/wise-coders/mongodb-jdbc-driver)
  */
-class WrappedFindIterable<TResult>(private val findIterable: FindIterable<TResult?>) : MongoIterable<TResult?> {
+class WrappedFindIterable<TResult>(
+    private val findIterable: FindIterable<TResult?>,
+    private val countDocuments: ((Bson?) -> Long)? = null,
+    initialFilter: Bson? = null,
+) : MongoIterable<TResult?> {
+
+    private var filter: Bson? = initialFilter
 
     private fun toDocument(map: Map<String, *>): TResult {
         return (Document(map)) as TResult
     }
 
     fun filter(str: String): WrappedFindIterable<*> {
-        findIterable.filter(BasicDBObject.parse(str))
+        val bson: Bson = BasicDBObject.parse(str)
+        filter = bson
+        findIterable.filter(bson)
         return this
     }
 
     fun filter(map: Map<*, *>?): WrappedFindIterable<*> {
-        findIterable.filter(GraalConvertor.toBson(map))
+        val bson: Bson = GraalConvertor.toBson(map)
+        filter = bson
+        findIterable.filter(bson)
         return this
     }
 
@@ -56,16 +66,28 @@ class WrappedFindIterable<TResult>(private val findIterable: FindIterable<TResul
         return this
     }
 
+    /**
+     * Like the legacy mongo shell cursor.count(): computed server side from the filter,
+     * ignoring skip() and limit(). Falls back to iterating the cursor when no count
+     * callback was provided.
+     */
     fun count(): Long {
+        if (countDocuments != null) {
+            return countDocuments(filter)
+        }
         var cnt: Long = 0
-        for (res in findIterable) {
-            cnt++
+        iterator().use { cursor: MongoCursor<TResult?> ->
+            while (cursor.hasNext()) {
+                cursor.next()
+                cnt++
+            }
         }
         return cnt
     }
 
     //---------------------------------------------------------------
     fun filter(bson: Bson?): WrappedFindIterable<*> {
+        filter = bson
         findIterable.filter(bson)
         return this
     }

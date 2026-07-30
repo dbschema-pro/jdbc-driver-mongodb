@@ -1,6 +1,7 @@
 package com.wisecoders.jdbc.mongodb
 
 import com.mongodb.client.AggregateIterable
+import com.mongodb.client.MongoIterable
 import com.mongodb.client.model.ReplaceOptions
 import com.wisecoders.common_jdbc.jvm.result_set.ArrayResultSet
 import com.wisecoders.common_jdbc.jvm.result_set.ObjectAsResultSet
@@ -44,7 +45,8 @@ class MongoPreparedStatement : PreparedStatement {
     private val connection: MongoConnection
     private var lastResultSet: ResultSet? = null
     private var isClosed = false
-    private var maxRows = -1
+    private var maxRows = 0
+    private var fetchSize = 0
     private val query: String?
 
     internal constructor(connection: MongoConnection) {
@@ -150,15 +152,27 @@ class MongoPreparedStatement : PreparedStatement {
                 obj = value.asHostObject()
             }
             if (obj is AggregateIterable<*>) {
-                lastResultSet = ResultSetIterator2(obj.allowDiskUse(true).iterator(), connection.client.expandResultSet)
-            } else if (obj is Iterable<*>) {
-                lastResultSet = ResultSetIterator2(obj.iterator(), connection.client.expandResultSet)
-            } else if (obj is Iterator<*>) {
-                lastResultSet = ResultSetIterator2(obj, connection.client.expandResultSet)
-            } else if (obj is WrappedMongoCollection<*>) {
-                lastResultSet = ResultSetIterator2(obj.find(), connection.client.expandResultSet)
+                obj = obj.allowDiskUse(true)
+            }
+            if (obj is WrappedMongoCollection<*>) {
+                obj = obj.find()
+            }
+            if (obj is MongoIterable<*> && fetchSize > 0) {
+                obj.batchSize(fetchSize)
+            }
+            val iterator: Iterator<*>? = when (obj) {
+                is Iterable<*> -> obj.iterator()
+                is Iterator<*> -> obj
+                else -> null
+            }
+            lastResultSet = if (iterator == null) {
+                ObjectAsResultSet(obj)
             } else {
-                lastResultSet = ObjectAsResultSet(obj)
+                MongoResultSet(
+                    ResultSetIterator2(iterator, connection.client.expandResultSet),
+                    iterator as? AutoCloseable,
+                    maxRows,
+                )
             }
             return lastResultSet!!
         } catch (ex: Throwable) {
@@ -329,7 +343,11 @@ class MongoPreparedStatement : PreparedStatement {
         return maxRows
     }
 
+    @Throws(SQLException::class)
     override fun setMaxRows(max: Int) {
+        if (max < 0) {
+            throw SQLException("Max rows must be zero or positive, got $max.")
+        }
         this.maxRows = max
     }
 
@@ -401,11 +419,15 @@ class MongoPreparedStatement : PreparedStatement {
 
     @Throws(SQLException::class)
     override fun setFetchSize(rows: Int) {
+        if (rows < 0) {
+            throw SQLException("Fetch size must be zero or positive, got $rows.")
+        }
+        this.fetchSize = rows
     }
 
     @Throws(SQLException::class)
     override fun getFetchSize(): Int {
-        return 0
+        return fetchSize
     }
 
     @Throws(SQLException::class)
